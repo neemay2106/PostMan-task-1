@@ -36,17 +36,14 @@ class LogisticReasonModel:
 
 
     def predict(self,x,w,b,threshold = 0.5):
-        m,n = x.shape
+        # Ensure x is 2D: shape (num_samples, num_features)
+        x = np.atleast_2d(x)  # converts 1D to 2D automatically if needed
 
-        prediction = np.zeros(m)
-        for i in range(m):
-            z = np.dot(w,x[i])+ b
-            g = self.sigmoid(z)
+        z = np.dot(x, w) + b
+        g = self.sigmoid(z)
 
-            if g >threshold:
-                prediction[i] = 1
-            else:
-                prediction[i] = 0
+        # Apply threshold
+        prediction = (g > threshold).astype(int)
         return prediction
 
     def raw_pred(self,x,w,b):

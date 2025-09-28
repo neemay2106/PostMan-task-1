@@ -27,11 +27,13 @@ class RandomForestClassifier:
         return x[idx], y[idx]
 
     def most_common(self,y):
-        common = Counter(y)
-        value = common.most_common(1)[0][0]
+        if len(y) == 0:
+            return None
+        counter = Counter(y)
+        value = counter.most_common(1)[0][0]
         return value
     def predict(self,x):
         predictions =np.array([tree.predict(x) for tree  in self.trees])
         preds = np.swapaxes(predictions,0,1)
-        final_preds = np.array([p.most_common(p) for p in preds])
-        return fianl_preds
+        final_preds = np.array([self.most_common(p) for p in preds])
+        return final_preds

@@ -7,7 +7,7 @@ from logistic_reason_model import LogisticReasonModel
 import numpy as np
 from train_test_split import split_shuffle
 from K_Fold import CrossValidation
-from sklearn.metrics import roc_curve, auc
+from Model2 import RandomForestClassifier
 
 FPR = []
 Recall = []
@@ -108,6 +108,15 @@ comb_dict = {"customer_unique_id": final_dataset.customer_unique_id.unique().tol
 final = pd.DataFrame.from_dict(comb_dict)
 print(final.head())
 
+
+assert final["customer_unique_id"].isna().sum() == 0
+assert final["customer_unique_id"].is_unique
+
+assert final["Monetary"].between(0,1).all()
+assert final["Recency"].between(0,1).all()
+assert final["Frequency"].between(0,1).all()
+assert set(final["Churn"].unique()).issubset({0,1})
+
 x_train, y_train, x_test, y_test = split_shuffle(df = final , test_ratio = 0.2 ,flag = "Churn" , positive = 1 , negative = 0 )
 
 
@@ -118,6 +127,8 @@ y = final['Churn'].values   # <-- Make sure it's 1D
 
 m_train, n_train = x_train.shape
 m_test, n_test = x_test.shape
+print(len(y_train))
+print(len(x_train))
 
 model = LogisticReasonModel()
 # Train
@@ -161,61 +172,14 @@ Accuracy.append(accuracy)
     #
 
 f1 = 2*(recall*precision)/(recall+precision) if (recall+ precision)>0 else 0
+print(f1)
 F1.append(f1)
-    #
-#     J_statistic.append(recall-fpr)
-#
-# index_stat = J_statistic.index(max(J_statistic))
-# threshold = y_axis[index_stat]
 
 
+model_2 = RandomForestClassifier(max_depth=10)
+model_2.fit(x = x_train, y = y_train)
+preds2 = model_2.predict(x_test)
 
-# plt.plot(Recall,Precision , label = 'PR')
-# plt.show()
-# plt.plot(F1,y_axis)
-# plt.show()
+acc = np.mean(preds2 == y_test)*100
+print(acc)
 
-# if 0 in pred and 1 in pred:
-#     print("Array contains both 0 and 1")
-# elif 1 in pred:
-#     print("Only 1s found")
-# elif 0 in pred:
-#     print("Only 0s found")
-# else:
-#     print("Array is empty")
-
-
-
-# Import libraries
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report,f1_score
-
-# Example: Load dataset (replace with your own dataset)
-# For demonstration, let’s use sklearn’s built-in breast cancer dataset
-from sklearn.datasets import load_breast_cancer
-data = load_breast_cancer()
-
-
-# Split into train and test sety
-X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
-
-# Feature scaling (important for logistic regression)
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-# Create and train logistic regression model
-model = LogisticRegression(max_iter=1000)  # increase max_iter if convergence issues
-model.fit(X_train_scaled, y_train)
-
-# Predictions
-y_pred = model.predict(X_test_scaled)
-
-# Evaluation
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print("\nClassification Report:\n", classification_report(y_test, y_pred))
-print("F1 Score:", f1_score(y_test, y_pred))

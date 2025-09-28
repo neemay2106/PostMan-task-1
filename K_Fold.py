@@ -12,24 +12,25 @@ class CrossValidation:
         part_x = np.array_split(x,self.fold)
         part_y = np.array_split(y,self.fold)
         model = LogisticReasonModel()
-        for i in range(len(part_x)):
-            new_list_x = np.vstack(part_x[:i] + part_x[i+1:])
-            new_list_y = np.hstack(part_y[:i] + part_y[i+1:])
-            w,b = model.gradient_function(new_list_x,new_list_y,alpha,iterations)
-            parameter.append((w,b))
-            pred = model.predict(part_x[i],w,b)
+        for i in range(len(part_x)-1):
+            new_list_x = np.vstack(part_x[:i] + part_x[i + 2:])
+            new_list_y = np.hstack(part_y[:i] + part_y[i + 2:])
+            w, b = model.gradient_function(new_list_x, new_list_y, alpha, iterations)
+            parameter.append((w, b))
+            test_x = np.vstack([part_x[i], part_x[i + 1]])
+            test_y = np.hstack([part_y[i], part_y[i + 1]])
+            pred = model.predict(test_x[i], w, b)
 
             tp = 0
             fp = 0
             tn = 0
             fn = 0
-            val = part_y[i]
             for j in range(len(pred)):
-                if pred[j] == val[j] and pred[j] == 1:
+                if pred[j] == test_y[j] and pred[j] == 1:
                     tp += 1
-                elif pred[j] == 1 and val[j] == 0:
+                elif pred[j] == 1 and test_y[j] == 0:
                     fp += 1
-                elif pred[j] == 0 and val[j] == 1:
+                elif pred[j] == 0 and test_y[j] == 1:
                     fn += 1
                 else:
                     tn += 1
