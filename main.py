@@ -13,17 +13,17 @@ SEED = 21
 np.random.seed(SEED)
 random.seed(SEED)
 
-
+#Load Datasets
 customers = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_customers_dataset.csv')
 orders = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_orders_dataset.csv')
 payments = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_order_payments_dataset.csv')
 
-
+#scales  functions so that it gives values between 0 and 1
 def scaling_function(x_given,x_min,x_max,list_ap):
     x_scaled = (x_given-x_min)/(x_max -x_min)
     list_ap.append(x_scaled)
 
-
+#Feature Engineering
 orders = orders[orders['order_status'] == 'delivered']
 orders['order_purchase_timestamp'] = pd.to_datetime(orders['order_purchase_timestamp'] , format = '%Y-%m-%d %H:%M:%S', errors = 'coerce')
 reference_date = orders['order_purchase_timestamp'].max()
@@ -101,8 +101,7 @@ assert final["Frequency"].between(0,1).all()
 assert set(final["Churn"].unique()).issubset({0,1})
 
 x_train, y_train, x_test, y_test = split_shuffle(df = final , test_ratio = 0.5 ,flag = "Churn" , positive = 1 , negative = 0)
-churn_count = pd.Series(y_test).value_counts()
-print(f"Churn count:\n {churn_count}")
+
 
 #check for Overlap
 train_rows = set([tuple(row) for row in x_train])
@@ -110,22 +109,22 @@ test_rows = set([tuple(row) for row in x_test])
 overlap = train_rows & test_rows
 print("Number of overlapping rows:", len(overlap))
 
-# Extract X and y
+# Extract X and y from final dataset
 x = final[['Monetary', 'Recency', 'Frequency']].values
 y = final['Churn'].values
+churn_count = pd.Series(y).value_counts()
+print(f"Churn count:\n {churn_count}")
 m_train, n_train = x_train.shape
 m_test, n_test = x_test.shape
 
 
 #Logistic Regression Model
+
 model = LogisticReasonModel()
 w, b =  model.gradient_function(x = x_train,y = y_train, alpha=0.01, iterations=1000)
-
 model.gradient_function(x = x_train,y = y_train, alpha=0.01, iterations=1000)
 pred =  model.predict(x = x_test)
-
 tp = fp = tn = fn= 0
-
 for i in range(len(pred)):
     if pred[i] == y_test[i] and pred[i] == 1 :
         tp += 1
@@ -135,9 +134,6 @@ for i in range(len(pred)):
         fn += 1
     else:
         tn += 1
-
-
-
 fpr = (fp/(fp + tn)) if (tn +fp)>0 else 0
 recall = (tp/(tp+fn)) if (tp +fn)>0 else 0
 precision = (tp / (tp + fp)) if (tp +fp)>0 else 0
@@ -149,9 +145,12 @@ print("Recall:", recall)
 print("F1-score:", f1)
 confusion_matrix_1 = np.array([[tp, fp],
                         [fn, tn]])
-
 print(confusion_matrix_1)
-
+#Cross Validation for logistic Regression
+Cross = CrossValidation()
+best_lr , scores_lr = Cross.split(x = x_train, y = y_train,model_class = LogisticReasonModel,args = (.01,1000) )
+print("F1 per fold:", scores_lr)
+print("Best Model:", best_lr)
 
 #Model 2 Random Forest Classifier
 model_2 = RandomForestClassifier(
@@ -172,7 +171,6 @@ for i in range(len(pred2)):
         fn_2 += 1
     else:
         tn_2 += 1
-
 fpr_2 = (fp_2 / (fp_2 + tn_2)) if (fp_2 + tn_2) > 0 else 0
 recall_2 = (tp_2 / (tp_2 + fn_2)) if (tp_2 + fn_2) > 0 else 0
 precision_2 = (tp_2 / (tp_2 + fp_2)) if (tp_2 + fp_2) > 0 else 0
@@ -187,16 +185,12 @@ confusion_matrix_2 = np.array([[tp_2, fp_2],
 
 print(confusion_matrix_2)
 
-#cross Validating
+#Cross Validation for Random Forest
+best_rf , scores_rf = Cross.split(x = x_train, y = y_train,model_class = RandomForestClassifier)
+print("F1 per fold:", scores_rf)
+print("Best Model:", best_rf)
 
-Cross_1 = CrossValidation()
-best_m , scores = Cross_1.split(x = x_train, y = y_train,model_class = LogisticReasonModel,args = (.01,1000) )
-print("F1 per fold:", scores)
-
-Cross_1 = CrossValidation()
-best_m_2 , scores = Cross_1.split(x = x_train, y = y_train,model_class = RandomForestClassifier)
-print("F1 per fold:", scores)
-
+#Heat Map for the RFM dataset
 data = pd.DataFrame(final[['Monetary', 'Recency', 'Frequency','Churn']])
 corr = data.corr()
 plt.figure(figsize=(12, 8))  # Adjust size as needed
@@ -204,9 +198,18 @@ sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
 plt.title("Feature Correlation Heatmap")
 plt.show()
 
+#Confusion matrix for logistic Regression
 labels = [0, 1]
 plt.figure(figsize=(6,4))
 sns.heatmap(confusion_matrix_1, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix - Random Forest')
+plt.show()
+#Confusion matrix for Radom Forest
+labels = [0, 1]
+plt.figure(figsize=(6,4))
+sns.heatmap(confusion_matrix_2, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
 plt.xlabel('Predicted')
 plt.ylabel('Actual')
 plt.title('Confusion Matrix - Random Forest')

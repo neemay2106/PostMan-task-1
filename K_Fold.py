@@ -10,17 +10,20 @@ class CrossValidation:
         self.fold = 10
         F1_score = []
         models= []
+        #splitting the dataset into flods
         part_x = np.array_split(x,self.fold)
         part_y = np.array_split(y,self.fold)
 
         for i in range(self.fold):
+            #Picking 1 fold for testing and the rest 9 left for training
             x_train = np.vstack([part_x[j] for j in range(self.fold) if j != i])
             y_train = np.hstack([part_y[j] for j in range(self.fold) if j != i])
             x_test = part_x[i]
             y_test = part_y[i]
 
+            #Loading in the model we want to to Cross Validate
             model = model_class(**model_para)
-            model.fit(x_train,y_train,*args,*kwargs)
+            model.fit(x_train,y_train,*args,**kwargs)
             pred = model.predict(x_test)
 
 
@@ -38,17 +41,12 @@ class CrossValidation:
                     fn += 1
                 else:
                     tn += 1
-
-
-
             recall = (tp / (tp + fn)) * 100 if (tp + fn) > 0 else 0
-
             precision = (tp / (tp + fp)) * 100 if (tp + fp) > 0 else 0
-
             f1 = 2 * (recall * precision) / (recall + precision) if (recall + precision) > 0 else 0
             F1_score.append(f1)
             models.append(model)
-
+        #Getting index for maximum F1 score
         best_idx = np.argmax(F1_score)
 
 
