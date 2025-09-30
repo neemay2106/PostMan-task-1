@@ -1,5 +1,11 @@
 import numpy as np
 from collections import Counter
+import random
+
+SEED = 21
+np.random.seed(SEED)
+random.seed(SEED)
+
 
 class Node:
     def __init__(self, feature = None , right = None , left = None , threshold = None,*,value = None):
@@ -38,21 +44,17 @@ class DecisionTree:
         no_samples , no_feats = x.shape
         no_labels = len(np.unique(y))
 
-        #stopping crieria
         if depth>= self.max_depth or no_samples <= self.min_samples or no_labels == 1 :
             return Node(value=self.most_common(y))
 
-        #splitting the tree
         feat_indexes = np.random.choice(no_feats , self.no_features , replace = False)
-
 
         best_feature, best_threshold = self.best_split(x,y,feat_indexes)
         if best_threshold is None:
-            # No valid split, make a leaf
             leaf_value = self.most_common(y)
             return Node(value=leaf_value)
 
-        #creating the child node
+
         l_indxs , r_indxs = self.branch(x[: , best_feature], best_threshold)
         left_child = self.grow_tree(x[l_indxs], y[l_indxs], depth + 1)
         right_child = self.grow_tree(x[r_indxs], y[r_indxs], depth + 1)

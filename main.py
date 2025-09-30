@@ -2,11 +2,17 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 import math
+import random
 from logistic_reason_model import LogisticReasonModel
 import numpy as np
 from train_test_split import split_shuffle
 from K_Fold import CrossValidation
 from Model2 import RandomForestClassifier
+
+SEED = 21
+np.random.seed(SEED)
+random.seed(SEED)
+
 
 customers = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_customers_dataset.csv')
 orders = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_orders_dataset.csv')
@@ -95,6 +101,8 @@ assert final["Frequency"].between(0,1).all()
 assert set(final["Churn"].unique()).issubset({0,1})
 
 x_train, y_train, x_test, y_test = split_shuffle(df = final , test_ratio = 0.5 ,flag = "Churn" , positive = 1 , negative = 0)
+churn_count = pd.Series(y_test).value_counts()
+print(f"Churn count:\n {churn_count}")
 
 #check for Overlap
 train_rows = set([tuple(row) for row in x_train])
@@ -174,10 +182,10 @@ print("Accuracy:", acc_2)
 print("Precision:", precision_2)
 print("Recall:", recall_2)
 print("F1-score:", f1_2)
-confusion_matrix_1 = np.array([[tp_2, fp_2],
+confusion_matrix_2 = np.array([[tp_2, fp_2],
                         [fn_2, tn_2]])
 
-print(confusion_matrix_1)
+print(confusion_matrix_2)
 
 #cross Validating
 
@@ -194,4 +202,12 @@ corr = data.corr()
 plt.figure(figsize=(12, 8))  # Adjust size as needed
 sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
 plt.title("Feature Correlation Heatmap")
+plt.show()
+
+labels = [0, 1]
+plt.figure(figsize=(6,4))
+sns.heatmap(confusion_matrix_1, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix - Random Forest')
 plt.show()

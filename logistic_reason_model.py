@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class LogisticReasonModel:
     def __init__(self):
         self.w = None
@@ -43,15 +45,5 @@ class LogisticReasonModel:
 
     def fit(self,x,y,alpha,iterations):
         self.w, self.b = self.gradient_function(x,y,alpha,iterations)
-
-
-    def raw_pred(self,x,w,b):
-        m,n = x.shape
-        g_list = []
-        for i in range(m):
-            z = np.dot(w,x[i])+ b
-            g = self.sigmoid(z)
-            g_list.append(g)
-        return  g_list
 
 

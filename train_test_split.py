@@ -1,6 +1,11 @@
 import pandas as pd
 import math
+import numpy as np
+import random
 
+SEED = 21
+np.random.seed(SEED)
+random.seed(SEED)
 def split_shuffle(df, test_ratio, positive, negative, flag):
     # Remove duplicates
     df = df.drop_duplicates().reset_index(drop=True)

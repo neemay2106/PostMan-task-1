@@ -1,9 +1,12 @@
-from ensurepip import bootstrap
+
 from collections import Counter
 import numpy as np
-
+import random
 from decision_tree import DecisionTree
 
+SEED = 21
+np.random.seed(SEED)
+random.seed(SEED)
 
 class RandomForestClassifier:
     def __init__(self,n_trees = 10 , max_depth= 10 , min_samples = 2 , features = None):
