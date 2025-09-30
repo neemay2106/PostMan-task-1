@@ -76,6 +76,7 @@ Implementation Challenge:
  computation time.
 Outcome:
  Random Forest effectively captured non-linear patterns and interactions among RFM features. Vectorized threshold calculations and bootstrap sampling improved performance, making it practical for the full dataset.
+
 3) Cross-Validation
 10-fold cross-validation was applied to both models to evaluate stability and generalization.
 Logistic Regression F1 per fold: [96.3, 94.3, 98.8, 97.2, 98.9, 96.2, 96.3, 96.4, 94.9, 94.8]
