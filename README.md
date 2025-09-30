@@ -49,65 +49,67 @@ Challenges:
 Modeling
 
 1) Logistic Regression
-Logistic Regression is a widely used classification algorithm that predicts the probability of a binary outcome. Despite its name, it is primarily used for classification rather than regression. In this analysis, Logistic Regression
-serves as a baseline model.
-Model Implementation:
-Sigmoid Function: Maps predicted values to the range [0,1], taking the weighted sum of features as input and outputting the probability of churn.
-
-Loss and Cost Functions: Penalize predictions far from the actual label and reward accurate predictions. The cost function sums the loss across all samples and divides by the number of samples.
-
-Gradient Descent: Partial derivatives of the cost function with respect to weights and bias were computed iteratively to update the parameters for optimal predictions.
-
-Threshold Selection: Using the default threshold of 0.5 produced a lower F1 score. A ROC curve was plotted to determine the optimal threshold of 0.62, improving the balance between precision and recall.
-
-Implementation Challenge:
- Initially, gradient descent was implemented by looping over each row and feature, which was extremely slow due to the dataset size. Vectorizing the computations replaced loops with matrix operations, significantly improving performance.
+ Logistic Regression is a widely used classification algorithm that predicts the probability of a binary outcome. Despite its name, it is primarily used for classification rather than regression. In this analysis, Logistic Regression
+ serves as a baseline model.
+ Model Implementation:
+ Sigmoid Function: Maps predicted values to the range [0,1], taking the weighted sum of features as input and outputting the probability of churn.
+ 
+ Loss and Cost Functions: Penalize predictions far from the actual label and reward accurate predictions. The cost function sums the loss across all samples and divides by the number of samples.
+ 
+ Gradient Descent: Partial derivatives of the cost function with respect to weights and bias were computed iteratively to update the parameters for optimal predictions.
+ 
+ Threshold Selection: Using the default threshold of 0.5 produced a lower F1 score. A ROC curve was plotted to determine the optimal threshold of 0.62, improving the balance between precision and recall.
+ 
+ Implementation Challenge:
+  Initially, gradient descent was implemented by looping over each row and feature, which was extremely slow due to the dataset size. Vectorizing the computations replaced loops with matrix operations, significantly improving performance.
 
 2) Random Forest Classifier
-The Random Forest Classifier builds multiple decision trees and combines their predictions to improve accuracy and reduce overfitting. As a non-linear model, it captures complex relationships between RFM features and customer churn.
-Model Implementation:
-Decision Trees: Entropy was used as the splitting criterion. Stopping conditions, such as maximum depth and minimum samples per node, were set to prevent overfitting.
-
-
-Random Forest: Each tree was trained on a bootstrap sample of the training data. The number of trees was chosen to balance accuracy and efficiency.
-
-Implementation Challenge:
- The initial best-fit function iterated over all rows for each feature to determine the optimal split, causing slow training. A sweep method was implemented, evaluating thresholds only where the label changes, significantly reducing 
- computation time.
-Outcome:
- Random Forest effectively captured non-linear patterns and interactions among RFM features. Vectorized threshold calculations and bootstrap sampling improved performance, making it practical for the full dataset.
+ The Random Forest Classifier builds multiple decision trees and combines their predictions to improve accuracy and reduce overfitting. As a non-linear model, it captures complex relationships between RFM features and customer churn.
+ Model Implementation:
+ Decision Trees: Entropy was used as the splitting criterion. Stopping conditions, such as maximum depth and minimum samples per node, were set to prevent overfitting.
+ 
+ 
+ Random Forest: Each tree was trained on a bootstrap sample of the training data. The number of trees was chosen to balance accuracy and efficiency.
+ 
+ Implementation Challenge:
+  The initial best-fit function iterated over all rows for each feature to determine the optimal split, causing slow training. A sweep method was implemented, evaluating thresholds only where the label changes, significantly reducing 
+  computation time.
+ Outcome:
+  Random Forest effectively captured non-linear patterns and interactions among RFM features. Vectorized threshold calculations and bootstrap sampling improved performance, making it practical for the full dataset.
 
 3) Cross-Validation
-10-fold cross-validation was applied to both models to evaluate stability and generalization.
-Logistic Regression F1 per fold: [96.3, 94.3, 98.8, 97.2, 98.9, 96.2, 96.3, 96.4, 94.9, 94.8]
-
-Random Forest F1 per fold: [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]
-
-Results & Evaluation
-
-Logistic Regression:
-Accuracy: 0.96
-Precision: 1.0
-Recall: 0.933
-F1-core: 0.965
-Confusion Matrix: [[24709, 0], [1776, 18060]]
-
-Random Forest Classifier:
-Accuracy, Precision, Recall, F1-score: 1.0
-Confusion Matrix: [[26485, 0], [0, 18060]]
+ 10-fold cross-validation was applied to both models to evaluate stability and generalization.
+ Logistic Regression F1 per fold: [96.3, 94.3, 98.8, 97.2, 98.9, 96.2, 96.3, 96.4, 94.9, 94.8]
+ 
+ Random Forest F1 per fold: [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]
+ 
+ Results & Evaluation
+ 
+ Logistic Regression:
+ Accuracy: 0.96
+ Precision: 1.0
+ Recall: 0.933
+ F1-core: 0.965
+ Confusion Matrix: [[24709, 0], [1776, 18060]]
+ 
+ Random Forest Classifier:
+ Accuracy, Precision, Recall, F1-score: 1.0
+ Confusion Matrix: [[26485, 0], [0, 18060]]
 
 Interpretation:
- While Random Forest outperforms Logistic Regression numerically, the perfect results suggest potential over-reliance on dominant features or data leakage.
-Limitations
-Despite high performance, the results may not fully reflect predictive ability. Frequency shows a high correlation (0.78) with churn, whereas Monetary and other features have near-zero correlation (-0.02, -0.01). 
-This indicates the models, particularly Random Forest, may rely heavily on one dominant feature rather than learning robust patterns.
-Data leakage is another concern, potentially allowing models to memorize the training data. Repeated customer IDs were checked, but further leakage investigation is recommended.
 
-Next Steps
-Revisit Feature Engineering: Ensure no feature inadvertently reveals the target. Explore new features capturing subtle customer behavior.
-Check for Data Leakage: Confirm that no information from the test set is present in training data, including overlapping timestamps or repeated customer IDs.
-Model Adjustments: Modify model training to prevent memorization, such as limiting tree depth or reducing highly correlated features.
-Focus on Data Understanding: Prioritize data exploration and cleaning before tuning models to ensure robust and reliable predictions.
+ While Random Forest outperforms Logistic Regression numerically, the perfect results suggest potential over-reliance on dominant features or data leakage.
+ Limitations
+ Despite high performance, the results may not fully reflect predictive ability. Frequency shows a high correlation (0.78) with churn, whereas Monetary and other features have near-zero correlation (-0.02, -0.01). 
+ This indicates the models, particularly Random Forest, may rely heavily on one dominant feature rather than learning robust patterns.
+ Data leakage is another concern, potentially allowing models to memorize the training data. Repeated customer IDs were checked, but further leakage investigation is recommended.
+ 
+ Next Steps
+ 
+ Revisit Feature Engineering: Ensure no feature inadvertently reveals the target. Explore new features capturing subtle customer behavior.
+ Check for Data Leakage: Confirm that no information from the test set is present in training data, including overlapping timestamps or repeated customer IDs.
+ Model Adjustments: Modify model training to prevent memorization, such as limiting tree depth or reducing highly correlated features.
+ Focus on Data Understanding: Prioritize data exploration and cleaning before tuning models to ensure robust and reliable predictions.
 
 
 
