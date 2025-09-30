@@ -1,9 +1,11 @@
 INTRODUCTION
+
 Churn rate measures the proportion of customers who stop using a service or product over a given period. In this analysis, we consider a period of 180 days (6 months), and a customer who has not made a purchase within this period is 
 considered churned. Using the customers, orders, and payments datasets, we computed RFM (Recency, Frequency, Monetary) features for each customer to summarize their purchasing behavior. Two models—Logistic Regression and 
 Random Forest Classifier—were trained to predict whether a customer is likely to churn.
 
 Data Understanding and Preparation
+
 Datasets Used:
 olist_customers
 olist_orders
@@ -21,6 +23,7 @@ The dataset contained order statuses: ['delivered', 'invoiced', 'shipped', 'proc
 Since the analysis focuses on completed transactions, we restricted the dataset to orders with status delivered. This ensures consistency in calculating customer purchase behavior, as incomplete or canceled orders do not reflect actual activity.
 
 Feature Engineering
+
 We constructed an RFM dataset to predict whether a customer is churned or not:
 Recency: Number of days between a customer’s last order and the reference date (the latest order in the dataset).
 
@@ -44,6 +47,7 @@ Challenges:
  Initially, we explored using Python’s random module to shuffle the data, but eventually we leveraged Pandas’ sample method for efficient and straightforward shuffling while preserving dataset structure.
 
 Modeling
+
 1) Logistic Regression
 Logistic Regression is a widely used classification algorithm that predicts the probability of a binary outcome. Despite its name, it is primarily used for classification rather than regression. In this analysis, Logistic Regression
 serves as a baseline model.
@@ -107,6 +111,7 @@ Focus on Data Understanding: Prioritize data exploration and cleaning before tun
 
 
 Reproducibility Checklist
+
 Random Seeds:
 
 A fixed random seed (21) was used for all operations involving randomness, ensuring consistent results.
