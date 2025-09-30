@@ -1,36 +1,40 @@
 from logistic_reason_model import LogisticReasonModel
 import numpy as np
 
+
 class CrossValidation:
     def __init__(self):
         self.fold = None
 
-    def split(self,x,y,alpha, iterations):
+    def split(self,x,y,model_class,model_para = {},args = (), kwargs = {}):
         self.fold = 10
-        parameter = []
-        F1 = []
+        F1_score = []
+        models= []
         part_x = np.array_split(x,self.fold)
         part_y = np.array_split(y,self.fold)
-        model = LogisticReasonModel()
-        for i in range(len(part_x)-1):
-            new_list_x = np.vstack(part_x[:i] + part_x[i + 2:])
-            new_list_y = np.hstack(part_y[:i] + part_y[i + 2:])
-            w, b = model.gradient_function(new_list_x, new_list_y, alpha, iterations)
-            parameter.append((w, b))
-            test_x = np.vstack([part_x[i], part_x[i + 1]])
-            test_y = np.hstack([part_y[i], part_y[i + 1]])
-            pred = model.predict(test_x[i], w, b)
+
+        for i in range(self.fold):
+            x_train = np.vstack([part_x[j] for j in range(self.fold) if j != i])
+            y_train = np.hstack([part_y[j] for j in range(self.fold) if j != i])
+            x_test = part_x[i]
+            y_test = part_y[i]
+
+            model = model_class(**model_para)
+            model.fit(x_train,y_train,*args,*kwargs)
+            pred = model.predict(x_test)
+
+
 
             tp = 0
             fp = 0
             tn = 0
             fn = 0
             for j in range(len(pred)):
-                if pred[j] == test_y[j] and pred[j] == 1:
+                if pred[j] == y_test[j] and pred[j] == 1:
                     tp += 1
-                elif pred[j] == 1 and test_y[j] == 0:
+                elif pred[j] == 1 and y_test[j] == 0:
                     fp += 1
-                elif pred[j] == 0 and test_y[j] == 1:
+                elif pred[j] == 0 and y_test[j] == 1:
                     fn += 1
                 else:
                     tn += 1
@@ -42,8 +46,10 @@ class CrossValidation:
             precision = (tp / (tp + fp)) * 100 if (tp + fp) > 0 else 0
 
             f1 = 2 * (recall * precision) / (recall + precision) if (recall + precision) > 0 else 0
-            F1.append(f1)
+            F1_score.append(f1)
+            models.append(model)
 
-        no_index = F1.index(max(F1))
-        w_get,b_get = parameter[no_index]
-        return w_get,b_get
+        best_idx = np.argmax(F1_score)
+
+
+        return models[best_idx], F1_score

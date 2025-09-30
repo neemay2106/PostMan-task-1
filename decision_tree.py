@@ -39,11 +39,12 @@ class DecisionTree:
         no_labels = len(np.unique(y))
 
         #stopping crieria
-        if depth>= self.max_depth or no_feats <= self.min_samples or no_labels == 1 :
+        if depth>= self.max_depth or no_samples <= self.min_samples or no_labels == 1 :
             return Node(value=self.most_common(y))
 
         #splitting the tree
         feat_indexes = np.random.choice(no_feats , self.no_features , replace = False)
+
 
         best_feature, best_threshold = self.best_split(x,y,feat_indexes)
         if best_threshold is None:
@@ -67,13 +68,7 @@ class DecisionTree:
         return left, right
 
     def best_split(self, x, y, feat_indexes):
-        """
-        Find the best feature and threshold using the sweep method.
-        x: feature matrix (num_samples, num_features)
-        y: labels (num_samples,)
-        feat_indexes: list of feature indices to consider
-        Returns: best_feature_index, best_threshold
-        """
+
         best_gain = -1
         best_feature = None
         best_threshold = None

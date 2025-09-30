@@ -34,17 +34,16 @@ class LogisticReasonModel:
 
         return self.w,self.b
 
+    def predict(self, x ):
+        if self.w is None or self.b is None:
+            raise ValueError("Model not trained. Call fit() first.")
+        z = np.dot(x, self.w) + self.b
+        probs = self.sigmoid(z)
+        return np.where(probs >= .62, 1, 0)
 
-    def predict(self,x,w,b,threshold = 0.5):
-        # Ensure x is 2D: shape (num_samples, num_features)
-        x = np.atleast_2d(x)  # converts 1D to 2D automatically if needed
+    def fit(self,x,y,alpha,iterations):
+        self.w, self.b = self.gradient_function(x,y,alpha,iterations)
 
-        z = np.dot(x, w) + b
-        g = self.sigmoid(z)
-
-        # Apply threshold
-        prediction = (g > threshold).astype(int)
-        return prediction
 
     def raw_pred(self,x,w,b):
         m,n = x.shape
