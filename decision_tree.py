@@ -34,6 +34,9 @@ class DecisionTree:
 
 
     def fit(self,x,y):
+        x = np.array(x)  # force numpy
+        y = np.array(y)
+
         self.no_features = x.shape[1] if not self.no_features else min(x.shape[1], self.no_features)
         self.root_node =  self.grow_tree(x,y)
 
@@ -157,9 +160,8 @@ class DecisionTree:
 
 
     def predict(self, x):
+        x = np.array(x)  # force numpy
         return np.array([self._traverse_tree(b, self.root_node) for b in x])
-
-
 
 
     def _traverse_tree(self, x, node):

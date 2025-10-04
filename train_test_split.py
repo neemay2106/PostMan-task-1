@@ -6,31 +6,65 @@ import random
 SEED = 21
 np.random.seed(SEED)
 random.seed(SEED)
-def split_shuffle(df, test_ratio, positive, negative, flag):
-    # Remove duplicates
-    df = df.drop_duplicates().reset_index(drop=True)
 
-    # Shuffle positives and negatives
-    x_pos = df[df[f"{flag}"] == positive].sample(frac=1, random_state=42).reset_index(drop=True)
-    x_neg = df[df[f"{flag}"] == negative].sample(frac=1, random_state=42).reset_index(drop=True)
 
-    len_pos_test = math.floor(len(x_pos) * test_ratio)
-    len_neg_test = math.floor(len(x_neg) * test_ratio)
+class TrainTestSplit:
+    def __init__(self):
+        pass  # required since __init__ is empty
 
-    # First chunk goes to test, remaining to train
-    test_set = pd.concat([x_pos[:len_pos_test], x_neg[:len_neg_test]]).sample(frac=1, random_state=42).reset_index(drop=True)
-    train_set = pd.concat([x_pos[len_pos_test:], x_neg[len_neg_test:]]).sample(frac=1, random_state=42).reset_index(drop=True)
+    def scaling_function(self, x_tr, x_ts):
+        x_tr = x_tr.astype(float).copy()
+        x_ts = x_ts.astype(float).copy()
 
-    # Extract features and labels
-    x_train = train_set[['Monetary', 'Recency', 'Frequency']].values
-    y_train = train_set['Churn'].values
-    x_test = test_set[['Monetary', 'Recency', 'Frequency']].values
-    y_test = test_set['Churn'].values
+        n_tr = x_tr.shape[1]
 
-    # Safety check: make sure no rows overlap
-    train_rows = set([tuple(row) for row in x_train])
-    test_rows = set([tuple(row) for row in x_test])
-    overlap = train_rows & test_rows
-    assert len(overlap) == 0, f"Train/Test overlap detected! Overlapping rows: {len(overlap)}"
+        for l in range(n_tr):
+            col_tr = x_tr.iloc[:, l]
+            col_ts = x_ts.iloc[:, l]
 
-    return x_train, y_train, x_test, y_test
+            x_min = col_tr.min()
+            x_max = col_tr.max()
+
+            if x_max == x_min:
+                x_tr.iloc[:, l] = 0.0
+                x_ts.iloc[:, l] = 0.0
+            else:
+                x_tr.iloc[:, l] = (col_tr - x_min) / (x_max - x_min)
+                x_ts.iloc[:, l] = (col_ts - x_min) / (x_max - x_min)
+
+        return x_tr, x_ts
+
+    def split_shuffle(self, df, test_ratio, positive, negative, flag):
+        # Remove duplicates
+        df = df.drop_duplicates().reset_index(drop=True)
+
+        # Get unique customers
+        unique_customers = df['customer_unique_id'].unique()
+        np.random.seed(42)
+        np.random.shuffle(unique_customers)
+
+        # Split customers into train/test
+        n_test = math.floor(len(unique_customers) * test_ratio)
+        test_customers = set(unique_customers[:n_test])
+        train_customers = set(unique_customers[n_test:])
+
+        # Assign rows based on customer membership
+        test_set = df[df['customer_unique_id'].isin(test_customers)].reset_index(drop=True)
+        train_set = df[df['customer_unique_id'].isin(train_customers)].reset_index(drop=True)
+
+        # Features
+        x_tr = train_set[['Monetary', 'Recency', 'Frequency']].copy()
+        x_ts = test_set[['Monetary', 'Recency', 'Frequency']].copy()
+
+        # Apply scaling
+        x_train, x_test = self.scaling_function(x_tr, x_ts)
+
+        # Labels
+        y_train = train_set['Churn']
+        y_test = test_set['Churn']
+
+        # Debug overlap (should now be zero)
+        overlap_ids = set(train_set['customer_unique_id']) & set(test_set['customer_unique_id'])
+        print("Number of overlapping customers:", len(overlap_ids))
+
+        return x_train, y_train, x_test, y_test

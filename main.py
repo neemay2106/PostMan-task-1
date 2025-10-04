@@ -1,11 +1,10 @@
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-import math
 import random
 from logistic_reason_model import LogisticReasonModel
 import numpy as np
-from train_test_split import split_shuffle
+from train_test_split import TrainTestSplit
 from K_Fold import CrossValidation
 from Model2 import RandomForestClassifier
 
@@ -13,20 +12,19 @@ SEED = 21
 np.random.seed(SEED)
 random.seed(SEED)
 
+FPR = []
+Recall = []
 #Load Datasets
 customers = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_customers_dataset.csv')
 orders = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_orders_dataset.csv')
 payments = pd.read_csv('/Users/neemayrajan/Desktop/PostMan task 1 /E-commerece data set by olist 2/olist_order_payments_dataset.csv')
 
-#scales  functions so that it gives values between 0 and 1
-def scaling_function(x_given,x_min,x_max,list_ap):
-    x_scaled = (x_given-x_min)/(x_max -x_min)
-    list_ap.append(x_scaled)
 
 #Feature Engineering
 orders = orders[orders['order_status'] == 'delivered']
 orders['order_purchase_timestamp'] = pd.to_datetime(orders['order_purchase_timestamp'] , format = '%Y-%m-%d %H:%M:%S', errors = 'coerce')
 reference_date = orders['order_purchase_timestamp'].max()
+print(reference_date)
 payments = payments.groupby('order_id')['payment_value'].sum().reset_index() #dropped all colmns except order id and payment_value
 merge_oc = pd.merge(customers, orders, how='inner', on='customer_id')
 
@@ -34,121 +32,109 @@ final_dataset = pd.merge(merge_oc , payments , how = 'inner' , on = 'order_id')
 final_dataset = final_dataset.drop(columns=['customer_zip_code_prefix','order_approved_at',
        'order_delivered_carrier_date', 'order_delivered_customer_date',
        'order_estimated_delivery_date'], axis = 1)
-
 #Frequency
 f = final_dataset.groupby('customer_unique_id')['order_id'].count().reset_index()
-frequency_log_trans = [math.log(n,10) for n in f["order_id"].tolist()]
-frequency = []
-rf_max = max(frequency_log_trans)
-rf_min = min(frequency_log_trans)
-for val in frequency_log_trans:
-    scaling_function(val,rf_min,rf_max,frequency)
 
 
 #Recency
 R = final_dataset.groupby('customer_unique_id')['order_purchase_timestamp'].max().reset_index()
-r = []
-churn = []
-for t in R['order_purchase_timestamp'].to_list():
-    log_tran_R = int((reference_date - t).days)
-    if log_tran_R > 0:
-       r.append(math.log(log_tran_R, 10))
-    else:
-        r.append(math.log(1, 10))
-
-for y in r:
-       if y> 2.25:
-              churn.append(1)
-       else:
-              churn.append(0)
-recency = []
-rr_max = max(r)
-rr_min = min(r)
-for val in r:
-    scaling_function(val,rr_min,rr_max,recency)
+R['order_purchase_timestamp'] = reference_date - R['order_purchase_timestamp']
+R['Recency'] = R['order_purchase_timestamp'].dt.days
+R['Churn'] = (R['Recency'] > 180).astype(int)
+R = R[['customer_unique_id', 'Recency', 'Churn']]
 
 #Monetary
 m1 = final_dataset.groupby('customer_unique_id')['payment_value'].sum().reset_index()
-m = m1['payment_value'].tolist()
-monetary = []
-monetary_log_trans= []
-for value in m:
-    log_trans_m = math.log(value, 10)
-    monetary_log_trans.append(log_trans_m)
-rm_max = max(monetary_log_trans)
-rm_min = min(monetary_log_trans)
-for val in monetary_log_trans:
-    scaling_function(val,rm_min,rm_max,monetary)
+
+
+
+rfm_df = R.merge(f, on='customer_unique_id').merge(m1, on='customer_unique_id')
+rfm_df.rename(columns={'payment_value': 'Monetary'}, inplace=True)
+rfm_df.rename(columns={'order_id': 'Frequency'}, inplace=True)
+#Heat Map for the RFM dataset
+data = pd.DataFrame(rfm_df[['Monetary', 'Recency', 'Frequency','Churn']])
+corr = data.corr()
+plt.figure(figsize=(12, 8))  # Adjust size as needed
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
+plt.title("Feature Correlation Heatmap")
+plt.show()
+
 
 #RFM Dataset
-comb_dict = {"customer_unique_id": final_dataset.customer_unique_id.unique().tolist(),
-             "Monetary": monetary,
-             "Recency": recency,
-             "Frequency": frequency,
-             "Churn": churn}
 
-final = pd.DataFrame.from_dict(comb_dict)
-final = final.drop_duplicates(subset=['Monetary', 'Recency', 'Frequency', 'Churn']).reset_index(drop=True)
 
 
 
 #Input Validation
-assert final["customer_unique_id"].isna().sum() == 0
-assert final["customer_unique_id"].is_unique
-assert final["Monetary"].between(0,1).all()
-assert final["Recency"].between(0,1).all()
-assert final["Frequency"].between(0,1).all()
-assert set(final["Churn"].unique()).issubset({0,1})
 
-x_train, y_train, x_test, y_test = split_shuffle(df = final , test_ratio = 0.5 ,flag = "Churn" , positive = 1 , negative = 0)
+train_test_split = TrainTestSplit()
+x_train, y_train, x_test, y_test = train_test_split.split_shuffle(df = rfm_df , test_ratio = 0.5 ,flag = "Churn" , positive = 1 , negative = 0)
+print(type(x_train))
+# print(x_test.head())
 
 
-#check for Overlap
-train_rows = set([tuple(row) for row in x_train])
-test_rows = set([tuple(row) for row in x_test])
-overlap = train_rows & test_rows
-print("Number of overlapping rows:", len(overlap))
 
-# Extract X and y from final dataset
-x = final[['Monetary', 'Recency', 'Frequency']].values
-y = final['Churn'].values
-churn_count = pd.Series(y).value_counts()
-print(f"Churn count:\n {churn_count}")
 m_train, n_train = x_train.shape
 m_test, n_test = x_test.shape
 
 
 #Logistic Regression Model
-
+j = []
+thresholds = []
+Precision = []
 model = LogisticReasonModel()
-w, b =  model.gradient_function(x = x_train,y = y_train, alpha=0.01, iterations=1000)
 model.gradient_function(x = x_train,y = y_train, alpha=0.01, iterations=1000)
-pred =  model.predict(x = x_test)
-tp = fp = tn = fn= 0
+for t in np.arange(0,1.01,.01):
+    thresholds.append(t)
+    pred =  model.predict(x = x_test,t = t)
+    tp = fp = tn = fn= 0
+    for i in range(len(pred)):
+        if pred[i] == y_test[i] and pred[i] == 1 :
+            tp += 1
+        elif pred[i] == 1 and y_test[i] == 0:
+            fp += 1
+        elif  pred[i] == 0 and y_test[i] == 1:
+            fn += 1
+        else:
+            tn += 1
+    precision = (tp / (tp + fp)) if (tp +fp)>0 else 0
+    Precision.append(precision)
+    fpr = (fp/(fp + tn)) if (tn +fp)>0 else 0
+    FPR.append(fpr)
+    recall = (tp/(tp+fn)) if (tp +fn)>0 else 0
+    Recall.append(recall)
+    j.append(recall-fpr)
+best_idx = np.argmax(j)
+best_threshold = thresholds[best_idx]
+print(f"Best threshold: {best_threshold}")
+plt.plot(FPR, Recall)
+plt.show()
+pred = model.predict(x=x_test, t=best_threshold)
+tp = fp = tn = fn = 0
 for i in range(len(pred)):
-    if pred[i] == y_test[i] and pred[i] == 1 :
+    if pred[i] == y_test[i] and pred[i] == 1:
         tp += 1
     elif pred[i] == 1 and y_test[i] == 0:
         fp += 1
-    elif  pred[i] == 0 and y_test[i] == 1:
+    elif pred[i] == 0 and y_test[i] == 1:
         fn += 1
     else:
         tn += 1
-fpr = (fp/(fp + tn)) if (tn +fp)>0 else 0
-recall = (tp/(tp+fn)) if (tp +fn)>0 else 0
+recall = (tp / (tp + fn)) if (tp + fn) > 0 else 0
+accuracy = (tp +tn) / (tp + tn+ fn+ fp) if (tp + tn+ fn+ fp) > 0 else 0
 precision = (tp / (tp + fp)) if (tp +fp)>0 else 0
-accuracy = np.mean(pred == y_test)
-f1 = 2*(recall*precision)/(recall+precision) if (recall+ precision)>0 else 0
+f1 = 2*(Recall[best_idx]*Precision[best_idx])/(Recall[best_idx]+Precision[best_idx]) if (Recall[best_idx]+ Precision[best_idx])>0 else 0
+confusion_matrix_lr = np.array([[tp,fp],[fn,tn]])
 print("Accuracy:", accuracy)
 print("Precision:", precision)
 print("Recall:", recall)
 print("F1-score:", f1)
-confusion_matrix_1 = np.array([[tp, fp],
-                        [fn, tn]])
-print(confusion_matrix_1)
+print("Confusion Matrix:",confusion_matrix_lr)
+
+
 #Cross Validation for logistic Regression
 Cross = CrossValidation()
-best_lr , scores_lr = Cross.split(x = x_train, y = y_train,model_class = LogisticReasonModel,args = (.01,1000) )
+best_lr , scores_lr = Cross.split(x = x_train, y = y_train,model_class = LogisticReasonModel,args = (.01,1000),pred_args= (0.59,) )
 print("F1 per fold:", scores_lr)
 print("Best Model:", best_lr)
 
@@ -175,42 +161,16 @@ fpr_2 = (fp_2 / (fp_2 + tn_2)) if (fp_2 + tn_2) > 0 else 0
 recall_2 = (tp_2 / (tp_2 + fn_2)) if (tp_2 + fn_2) > 0 else 0
 precision_2 = (tp_2 / (tp_2 + fp_2)) if (tp_2 + fp_2) > 0 else 0
 acc_2 = np.mean(pred2 == y_test)
+confusion_matrix_rf = np.array([[tp_2,fp_2],[fn_2,tn_2]])
 f1_2 = 2 * (recall_2 * precision_2) / (recall_2 + precision_2) if (recall_2 + precision_2) > 0 else 0
 print("Accuracy:", acc_2)
 print("Precision:", precision_2)
 print("Recall:", recall_2)
 print("F1-score:", f1_2)
-confusion_matrix_2 = np.array([[tp_2, fp_2],
-                        [fn_2, tn_2]])
-
-print(confusion_matrix_2)
+print("Confusion Matrix:",confusion_matrix_rf)
 
 #Cross Validation for Random Forest
+print(type(x_train))
 best_rf , scores_rf = Cross.split(x = x_train, y = y_train,model_class = RandomForestClassifier)
 print("F1 per fold:", scores_rf)
 print("Best Model:", best_rf)
-
-#Heat Map for the RFM dataset
-data = pd.DataFrame(final[['Monetary', 'Recency', 'Frequency','Churn']])
-corr = data.corr()
-plt.figure(figsize=(12, 8))  # Adjust size as needed
-sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
-plt.title("Feature Correlation Heatmap")
-plt.show()
-
-#Confusion matrix for logistic Regression
-labels = [0, 1]
-plt.figure(figsize=(6,4))
-sns.heatmap(confusion_matrix_1, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix - Random Forest')
-plt.show()
-#Confusion matrix for Radom Forest
-labels = [0, 1]
-plt.figure(figsize=(6,4))
-sns.heatmap(confusion_matrix_2, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix - Random Forest')
-plt.show()

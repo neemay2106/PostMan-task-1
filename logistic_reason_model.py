@@ -23,6 +23,8 @@ class LogisticReasonModel:
         m,n = x.shape
         self.w = np.zeros(n)
         self.b = 0
+        if type(x) != np.ndarray:
+            x = x.to_numpy()
         for _ in range(iterations):
 
             z = np.dot(x,self.w) + self.b
@@ -36,12 +38,12 @@ class LogisticReasonModel:
 
         return self.w,self.b
 
-    def predict(self, x ):
+    def predict(self, x,t ):
         if self.w is None or self.b is None:
             raise ValueError("Model not trained. Call fit() first.")
         z = np.dot(x, self.w) + self.b
         probs = self.sigmoid(z)
-        return np.where(probs >= .62, 1, 0)
+        return np.where(probs >= t, 1, 0)
 
     def fit(self,x,y,alpha,iterations):
         self.w, self.b = self.gradient_function(x,y,alpha,iterations)

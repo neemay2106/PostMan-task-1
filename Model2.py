@@ -17,15 +17,21 @@ class RandomForestClassifier:
         self.trees = []
 
     def fit(self,x,y):
+
         self.trees = []
 
         for n in range(self.n_trees):
             tree = DecisionTree(max_depth=self.max_depth , min_samples = self.min_samples, no_features = None)
             x_sam , y_sam = self.bootstrap_data(x,y)
+
             tree.fit(x_sam,y_sam)
             self.trees.append(tree)
 
     def bootstrap_data(self,x,y):
+        if type(x) != np.ndarray:
+            x = x.to_numpy()
+        if type(y) != np.ndarray:
+            y = y.to_numpy()
         idx = np.random.choice(len(x), len(x), replace=True)
         return x[idx], y[idx]
 

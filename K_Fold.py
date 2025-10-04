@@ -1,4 +1,4 @@
-
+import pandas as pd
 import numpy as np
 
 
@@ -6,7 +6,7 @@ class CrossValidation:
     def __init__(self):
         self.fold = None
 
-    def split(self,x,y,model_class,model_para = {},args = (), kwargs = {}):
+    def split(self,x,y,model_class,model_para = {},args = (), fit_kwargs = {}, pred_args = ()):
         self.fold = 10
         F1_score = []
         models= []
@@ -21,10 +21,13 @@ class CrossValidation:
             x_test = part_x[i]
             y_test = part_y[i]
 
+
             #Loading in the model we want to to Cross Validate
             model = model_class(**model_para)
-            model.fit(x_train,y_train,*args,**kwargs)
-            pred = model.predict(x_test)
+            model.fit(x_train,y_train,*args,**fit_kwargs)
+            pred = model.predict(x_test,*pred_args)
+            y_test = y_test.to_numpy()
+
 
 
 
