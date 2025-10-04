@@ -1,5 +1,5 @@
 INTRODUCTION
-Churn rate measures the proportion of customers who stop using a service or product over a given period. In this analysis, we consider a period of 180 days (6 months), and a customer who has not made a purchase within this period is considered churned. Using the customers, orders, and payments datasets, we computed RFM (Recency, Frequency, Monetary) features for each customer to summarize their purchasing behavior. Two models—Logistic Regression and Random Forest Classifier—were trained to predict whether a customer is likely to churn.
+  Churn rate measures the proportion of customers who stop using a service or product over a given period. In this analysis, we consider a period of 180 days (6 months), and a customer who has not made a purchase within this period is considered churned. Using the customers, orders, and payments datasets, we computed RFM (Recency, Frequency, Monetary) features for each customer to summarize their purchasing behavior. Two models—Logistic Regression and Random Forest Classifier—were trained to predict whether a customer is likely to churn.
 
 Data Understanding and Preparation
 Datasets Used:
